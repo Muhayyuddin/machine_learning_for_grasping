@@ -5,25 +5,23 @@ find_package(catkin REQUIRED
 COMPONENTS 
 message_generation 
 std_msgs 
-geometry_msgs)
+geometry_msgs
+)
 
 
-add_service_files
-(
+add_service_files(
 DIRECTORY srv 
 FILES 
 grasp_feasibility_evaluation.srv
 )
 
-generate_messages
-(
+generate_messages(
 DEPENDENCIES
 std_msgs 
 geometry_msgs
 )
 
-catkin_package
-(
+catkin_package(
 CATKIN_DEPENDS 
 message_runtime 
 std_msgs 
