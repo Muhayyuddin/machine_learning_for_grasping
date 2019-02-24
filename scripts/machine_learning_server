@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+NAME = 'machine_learning_server'
+
+# import the machine_learning service
+from machine_learning.srv import *
+
+#import rospy package
+import rospy 
+#import geometry msgs
+from geometry_msgs.msg import Vector3, Quaternion, Transform, Point, Pose
+
+#grasp_feasibility_evaluator will take the vector of grasping poses (obtained from the graspit) along with the action type and object info and returns the most feasible grasp. The feasibility
+#is evauated using the machine learning techniques such as binary decision trees, ...
+def grasp_feasibility_evaluator(req):
+    print("grasp position is [%s]" % (req.graspVector))
+    #this function will call the learning algos then it will apply the voting scheme and finally it will return the best grasp as response.
+    return grasp_feasibility_evaluationResponse(req.graspVector)
+
+
+def decision_trees(req):
+    print("not implemented yet")
+    return null #should return the index of the best grasp
+
+def LinearSVC(req):
+    print("not implemented yet")
+    return null #should return the index of the best grasp
+
+def RandomForestClassifier(req):
+    print("not implemented yet")
+    return null #should return the index of the best grasp
+
+def VotingScheme(req):#output of the above functions will be input to this function
+    print("not implemented yet")
+    return null 
+
+#main function that spawn the services.
+def machine_learning_server():
+    rospy.init_node(NAME)
+    s1 = rospy.Service('grasp_feasibility_evaluator', grasp_feasibility_evaluation, grasp_feasibility_evaluator)
+
+    # spin() keeps Python from exiting until node is shutdown
+    rospy.spin()
+
+if __name__ == "__main__":
+    machine_learning_server()

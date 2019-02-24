@@ -1,0 +1,10 @@
+
+geometry_msgs/Pose graspVector
+#string manipulationAction
+#string objectClass
+#int64 a
+#int64 b
+---
+geometry_msgs/Pose feasibleGrasp
+#bool serviceExecutationStatus
+#int64 sum
