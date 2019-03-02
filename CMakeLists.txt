@@ -7,6 +7,7 @@ message_generation
 std_msgs 
 geometry_msgs
 )
+#catkin_python_setup()
 
 
 add_service_files(

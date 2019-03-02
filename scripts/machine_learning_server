@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 
 NAME = 'machine_learning_server'
+#import rospy package
+import rospy 
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+import pickle
+from geometry_msgs.msg import Vector3, Quaternion, Transform, Point, Pose
 
 # import the machine_learning service
 from machine_learning.srv import *
 
-#import rospy package
-import rospy 
-#import geometry msgs
-from geometry_msgs.msg import Vector3, Quaternion, Transform, Point, Pose
 
 #grasp_feasibility_evaluator will take the vector of grasping poses (obtained from the graspit) along with the action type and object info and returns the most feasible grasp. The feasibility
 #is evauated using the machine learning techniques such as binary decision trees, ...
@@ -33,10 +35,57 @@ def RandomForestClassifier(req):
 def VotingScheme(req):#output of the above functions will be input to this function
     print("not implemented yet")
     return null 
+    
+def Votingoutput(finename):
+    valid = 0
+    invalid = 0
+    unseen = pd.read_csv(finename, sep=',', encoding='utf-8')
+    objectEncoder = LabelEncoder()
+    
+    unseen.insert(9,"encoded",objectEncoder.fit_transform(unseen['object_name']))
+
+    unseen['object_name'] = unseen['encoded']
+
+    del(unseen['encoded'])
+
+    actionEncoder = LabelEncoder();
+    unseen.insert(9,"encoded",actionEncoder.fit_transform(unseen['actions']))
+
+    unseen['actions'] = unseen['encoded']
+
+    del(unseen['encoded'])
+    RandomForestClassifier = pickle.load(open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/RandomForestClassifier2','rb'))
+    result = RandomForestClassifier.predict(unseen.values)
+    if(result[0] =='valid' ):
+        valid = valid+1;
+    else:
+        invalid = invalid + 1
+
+
+    DecisionTreeClassifier = pickle.load(open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/DecisionTreeClassifier2','rb'))
+    result1 = DecisionTreeClassifier.predict(unseen.values)
+    if(result1[0] =='valid' ):
+        valid = valid+1;
+    else:
+        invalid = invalid + 1
+
+
+    GradientBoostingClassifier = pickle.load(open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/GradientBoostingClassifier2','rb'))
+    result2 = GradientBoostingClassifier.predict(unseen.values)
+    if(result2[0] =='valid' ):
+        valid = valid+1;
+    else:
+        invalid = invalid + 1
+
+    if(valid > invalid):
+        return 'valid'
+    else:
+        return 'invalid'
 
 #main function that spawn the services.
 def machine_learning_server():
     rospy.init_node(NAME)
+    print(Votingoutput('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/unseen.csv'))
     s1 = rospy.Service('grasp_feasibility_evaluator', grasp_feasibility_evaluation, grasp_feasibility_evaluator)
 
     # spin() keeps Python from exiting until node is shutdown
