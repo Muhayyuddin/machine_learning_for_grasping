@@ -3,7 +3,7 @@ This package uses machine learning algorithms to determine the right way of gras
 ## Installation
 ```
 - git clone https://github.com/Muhayyuddin/machine_learning_for_grasping.git
-- rosdep init
+- sudo rosdep init
 - rosdep update  
 - rosdep install --from-paths src --ignore-src --rosdistro melodic
 ```
