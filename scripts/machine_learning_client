@@ -13,12 +13,12 @@ from geometry_msgs.msg import Vector3, Quaternion, Transform, Point, Pose
 from machine_learning.srv import *
 
 #grasp_feasibility_evaluation_client will call the sgrasp_feasibility_evaluation service and return the response
-def grasp_feasibility_evaluation_client(grasp):
+def grasp_feasibility_evaluation_client(request):
     rospy.wait_for_service('grasp_feasibility_evaluator')
     try:
          grasp_feasibility_evaluator = rospy.ServiceProxy('grasp_feasibility_evaluator', grasp_feasibility_evaluation)
          # formal style
-         resp1 = grasp_feasibility_evaluator.call(grasp_feasibility_evaluationRequest(grasp))
+         resp1 = grasp_feasibility_evaluator.call(grasp_feasibility_evaluationRequest(request[0],request[1],request[2]))
          return resp1.feasibleGrasp
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
@@ -27,11 +27,15 @@ def grasp_feasibility_evaluation_client(grasp):
 if __name__ == "__main__":
     
     argv = rospy.myargv()
-    if len(argv) == 1:
+    #if len(argv) == 1:
+    
+    r = []
+    for i in range(10):
+	    grasp = Pose(position=Point(29.1189531311026,139.415219746906,29.1189531311026), orientation=Quaternion(-0.09206772082807099,0.088908845735825,0.037136849724687004, 0.99108002014165))
+            r.append(grasp)
 
-	grasp = Pose(
-            position=Point(1.0, 2.0, 3.0),
-            orientation=Quaternion(1.0, 0.0, 0.0, 0.0)
-        )
-   
-    print("best grasp is %s "% grasp_feasibility_evaluation_client(grasp))
+    manipulationAction = "Pick_Clean"
+    objectClass = "bottle"
+
+    request = [r, manipulationAction, objectClass]
+    print ("response: ", grasp_feasibility_evaluation_client(request))

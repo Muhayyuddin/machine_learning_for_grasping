@@ -1,7 +1,7 @@
 
-geometry_msgs/Pose graspVector
-#string manipulationAction
-#string objectClass
+geometry_msgs/Pose[] graspVector
+string manipulationAction
+string objectClass
 ---
-geometry_msgs/Pose feasibleGrasp
+geometry_msgs/Pose[] feasibleGrasp
 #bool serviceExecutationStatus

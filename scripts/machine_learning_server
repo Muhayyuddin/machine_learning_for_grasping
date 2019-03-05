@@ -14,10 +14,30 @@ from machine_learning.srv import *
 
 #grasp_feasibility_evaluator will take the vector of grasping poses (obtained from the graspit) along with the action type and object info and returns the most feasible grasp. The feasibility
 #is evauated using the machine learning techniques such as binary decision trees, ...
-def grasp_feasibility_evaluator(req):
-    print("grasp position is [%s]" % (req.graspVector))
+def grasp_feasibility_evaluator(request):
+    print("grasp pos is [%s]" % (request.graspVector))
+    print("Action is [%s]" % (request.manipulationAction))
+    print("object is [%s]" % (request.objectClass))
+    #print("position ", request.graspVector[0].position.x,request.graspVector[0].position.y,request.graspVector[0].position.z,
+    #request.graspVector[0].orientation.x,request.graspVector[0].orientation.y,request.graspVector[0].orientation.z,request.graspVector[0].orientation.w)
+    #print("Action and object name",request.manipulationAction,request.objectClass)
+
+    predictionModals = {
+        'Quaternion.w': [request.graspVector[0].orientation.w],
+        'Quaternion.x': [request.graspVector[0].orientation.x],
+        'Quaternion.y': [request.graspVector[0].orientation.y],
+        'Quaternion.z': [request.graspVector[0].orientation.z],
+        'Translation.x': [request.graspVector[0].position.x],
+        'Translation.y': [request.graspVector[0].position.y],
+        'Translation.z': [request.graspVector[0].position.z],
+        'object_name': [request.objectClass],
+        'actions': [request.manipulationAction]
+    }
+    data = pd.DataFrame(predictionModals, columns=['Quaternion.w','Quaternion.x','Quaternion.y','Quaternion.z','Translation.x','Translation.y','Translation.z','object_name','actions'])
+    print("Labling ",data)
+    print(Votingoutput(data))
     #this function will call the learning algos then it will apply the voting scheme and finally it will return the best grasp as response.
-    return grasp_feasibility_evaluationResponse(req.graspVector)
+    return grasp_feasibility_evaluationResponse(request.graspVector)
 
 
 def decision_trees(req):
@@ -36,26 +56,26 @@ def VotingScheme(req):#output of the above functions will be input to this funct
     print("not implemented yet")
     return null 
     
-def Votingoutput(finename):
+def Votingoutput(data):
     valid = 0
     invalid = 0
-    unseen = pd.read_csv(finename, sep=',', encoding='utf-8')
+    
     objectEncoder = LabelEncoder()
     
-    unseen.insert(9,"encoded",objectEncoder.fit_transform(unseen['object_name']))
+    data.insert(9,"encoded",objectEncoder.fit_transform(data['object_name']))
 
-    unseen['object_name'] = unseen['encoded']
+    data['object_name'] = data['encoded']
 
-    del(unseen['encoded'])
+    del(data['encoded'])
 
     actionEncoder = LabelEncoder();
-    unseen.insert(9,"encoded",actionEncoder.fit_transform(unseen['actions']))
+    data.insert(9,"encoded",actionEncoder.fit_transform(data['actions']))
 
-    unseen['actions'] = unseen['encoded']
+    data['actions'] = data['encoded']
 
-    del(unseen['encoded'])
+    del(data['encoded'])
     RandomForestClassifier = pickle.load(open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/RandomForestClassifier2','rb'))
-    result = RandomForestClassifier.predict(unseen.values)
+    result = RandomForestClassifier.predict(data.values)
     if(result[0] =='valid' ):
         valid = valid+1;
     else:
@@ -63,7 +83,7 @@ def Votingoutput(finename):
 
 
     DecisionTreeClassifier = pickle.load(open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/DecisionTreeClassifier2','rb'))
-    result1 = DecisionTreeClassifier.predict(unseen.values)
+    result1 = DecisionTreeClassifier.predict(data.values)
     if(result1[0] =='valid' ):
         valid = valid+1;
     else:
@@ -71,21 +91,21 @@ def Votingoutput(finename):
 
 
     GradientBoostingClassifier = pickle.load(open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/GradientBoostingClassifier2','rb'))
-    result2 = GradientBoostingClassifier.predict(unseen.values)
+    result2 = GradientBoostingClassifier.predict(data.values)
     if(result2[0] =='valid' ):
         valid = valid+1;
     else:
         invalid = invalid + 1
 
     if(valid > invalid):
-        return 'valid'
+        return valid
     else:
-        return 'invalid'
+        return invalid
 
 #main function that spawn the services.
 def machine_learning_server():
     rospy.init_node(NAME)
-    print(Votingoutput('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/unseen.csv'))
+    #print(Votingoutput('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/unseen.csv'))
     s1 = rospy.Service('grasp_feasibility_evaluator', grasp_feasibility_evaluation, grasp_feasibility_evaluator)
 
     # spin() keeps Python from exiting until node is shutdown
