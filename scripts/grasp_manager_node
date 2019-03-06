@@ -39,19 +39,7 @@ def compute_grasps(graspit_parameters):
 if __name__ == "__main__":
     
     argv = rospy.myargv()
-    #if len(argv) == 1:
     
-    #r = []
-    #for i in range(10):
-	#    grasp = Pose(position=Point(29.1189531311026,139.415219746906,29.1189531311026), orientation=Quaternion(-0.09206772082807099,0.088908845735825,0.037136849724687004, 0.99108002014165))
-    #        r.append(grasp)
-
-    #manipulationAction = "Pick_Clean"
-    #objectClass = "bottle"
-
-    #request = [r, manipulationAction, objectClass]
-    #print ("response: ", grasp_feasibility_evaluation_client(request))
-
     world_file_path="/home/muhayyuddin/graspit_ws/src/GraspIt-RosNode/graspit_ros/models/worlds/pal_gripper_world.xml"
     output_path="/home/muhayyuddin/graspit_ws/src/GraspIt-RosNode/graspit_ros/RESULTS"
     maxPlanningSteps=70000
@@ -61,4 +49,19 @@ if __name__ == "__main__":
     saveVisualResults=True
     
     graspit_parameters = [world_file_path,output_path,maxPlanningSteps,repeatPlanning,keepMaxPlanningResults,finishWithAutograsp,finishWithAutograsp,saveVisualResults]
-    print ("response: ", compute_grasps(graspit_parameters))
+    PoseVector = compute_grasps(graspit_parameters)
+    print ("response: ", PoseVector)
+
+
+    r = []
+    for i in range(len(PoseVector)):
+	    grasp = Pose(position=Point(PoseVector[i].translation.x,PoseVector[i].translation.y,PoseVector[i].translation.z),   		   orientation=Quaternion(PoseVector[i].rotation.w,PoseVector[i].rotation.x,PoseVector[i].rotation.y,PoseVector[i].rotation.z))
+            r.append(grasp)
+
+    manipulationAction = "Pick_Clean"
+    objectClass = "bottle"
+    request = [r, manipulationAction, objectClass]
+    print ("data for learning egine is of the form: ", request)
+    print ("response of the machine learning server: ", grasp_feasibility_evaluation_client(request))
+
+  

@@ -33,6 +33,7 @@ geometry_msgs
 catkin_install_python(PROGRAMS
   scripts/machine_learning_server
   scripts/machine_learning_client
+  scripts/grasp_manager_node
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/scripts
 )
 
