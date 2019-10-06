@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+
+
+import sys
+import os
+
+import rospy
+#import geometry msgs
+from dynamic_reconfigure.server import Server as DynamicReconfigureServer
+from geometry_msgs.msg import Vector3, Quaternion, Transform, Point, Pose
+
+
+# imports the machine_learning service 
+from machine_learning.srv import *
+from graspit_ros.srv import *
+#grasp_feasibility_evaluation_client will call the sgrasp_feasibility_evaluation service and return the response
+def grasp_feasibility_evaluation_client(request):
+    rospy.wait_for_service('grasp_feasibility_evaluator')
+    try:
+         grasp_feasibility_evaluator = rospy.ServiceProxy('grasp_feasibility_evaluator', grasp_feasibility_evaluation)
+         # formal style
+         resp1 = grasp_feasibility_evaluator.call(grasp_feasibility_evaluationRequest(request[0],request[1],request[2]))
+         return resp1.feasibleGrasp
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
+
+
+def compute_grasps(graspit_parameters):
+    rospy.wait_for_service('graspit_ros_node/grasp_planning')
+    try:
+         grasp_generator = rospy.ServiceProxy('graspit_ros_node/grasp_planning', GraspPlanning)
+         # formal style
+         resp1 = grasp_generator.call(GraspPlanningRequest(graspit_parameters[0],graspit_parameters[1],graspit_parameters[2],graspit_parameters[3],graspit_parameters[4],graspit_parameters[5],graspit_parameters[6]))
+         return resp1.grasping_poses
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
+
+
+if __name__ == "__main__":
+    
+    argv = rospy.myargv()
+    
+    world_file_path="/home/muhayyuddin/graspit_ws/src/GraspIt-RosNode/graspit_ros/models/worlds/pal_gripper_world.xml"
+    output_path="/home/muhayyuddin/graspit_ws/src/GraspIt-RosNode/graspit_ros/RESULTS"
+    maxPlanningSteps=70000
+    repeatPlanning=1
+    keepMaxPlanningResults=20
+    finishWithAutograsp=False
+    saveVisualResults=True
+    
+    graspit_parameters = [world_file_path,output_path,maxPlanningSteps,repeatPlanning,keepMaxPlanningResults,finishWithAutograsp,finishWithAutograsp,saveVisualResults]
+    PoseVector = compute_grasps(graspit_parameters)
+    print ("response: ", PoseVector)
+
+
+    r = []
+    for i in range(len(PoseVector)):
+	    grasp = Pose(position=Point(PoseVector[i].translation.x,PoseVector[i].translation.y,PoseVector[i].translation.z),   		   orientation=Quaternion(PoseVector[i].rotation.w,PoseVector[i].rotation.x,PoseVector[i].rotation.y,PoseVector[i].rotation.z))
+            r.append(grasp)
+
+    manipulationAction = "Pick_Clean"
+    objectClass = "bottle"
+    request = [r, manipulationAction, objectClass]
+    print ("data for learning egine is of the form: ", request)
+    print ("response of the machine learning server: ", grasp_feasibility_evaluation_client(request))
+
