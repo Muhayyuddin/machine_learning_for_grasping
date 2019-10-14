@@ -39,9 +39,9 @@ def compute_grasps(graspit_parameters):
 if __name__ == "__main__":
     
     argv = rospy.myargv()
-    
-    world_file_path="/home/muhayyuddin/graspit_ws/src/GraspIt-RosNode/graspit_ros/models/worlds/pal_gripper_world.xml"
-    output_path="/home/muhayyuddin/graspit_ws/src/GraspIt-RosNode/graspit_ros/RESULTS"
+    user =  os.environ.get('USERNAME')
+    world_file_path="/home/{0}/graspit_ws/src/GraspIt-RosNode/graspit_ros/models/worlds/pal_gripper_world.xml".format(user)
+    output_path="/home/{0}/graspit_ws/src/GraspIt-RosNode/graspit_ros/RESULTS".format(user)
     maxPlanningSteps=70000
     repeatPlanning=1
     keepMaxPlanningResults=20
