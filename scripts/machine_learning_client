@@ -14,6 +14,8 @@ from geometry_msgs.msg import Vector3, Quaternion, Transform, Point, Pose
 from machine_learning.srv import *
 from graspit_ros.srv import *
 #grasp_feasibility_evaluation_client will call the sgrasp_feasibility_evaluation service and return the response
+
+
 def grasp_feasibility_evaluation_client(request):
     rospy.wait_for_service('grasp_feasibility_evaluator')
     try:

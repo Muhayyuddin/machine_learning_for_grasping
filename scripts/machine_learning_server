@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 NAME = 'machine_learning_server'
-#import rospy package
-import rospy 
+# import rospy package
+import rospy
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import pickle
@@ -12,15 +12,15 @@ from geometry_msgs.msg import Vector3, Quaternion, Transform, Point, Pose
 from machine_learning.srv import *
 
 
-#grasp_feasibility_evaluator will take the vector of grasping poses (obtained from the graspit) along with the action type and object info and returns the most feasible grasp. The feasibility
-#is evauated using the machine learning techniques such as binary decision trees, ...
+# grasp_feasibility_evaluator will take the vector of grasping poses (obtained from the graspit) along with the action type and object info and returns the most feasible grasp. The feasibility
+# is evauated using the machine learning techniques such as binary decision trees, ...
 def grasp_feasibility_evaluator(request):
     print("grasp pos is [%s]" % (request.graspVector))
     print("Action is [%s]" % (request.manipulationAction))
     print("object is [%s]" % (request.objectClass))
-    #print("position ", request.graspVector[0].position.x,request.graspVector[0].position.y,request.graspVector[0].position.z,
-    #request.graspVector[0].orientation.x,request.graspVector[0].orientation.y,request.graspVector[0].orientation.z,request.graspVector[0].orientation.w)
-    #print("Action and object name",request.manipulationAction,request.objectClass)
+    # print("position ", request.graspVector[0].position.x,request.graspVector[0].position.y,request.graspVector[0].position.z,
+    # request.graspVector[0].orientation.x,request.graspVector[0].orientation.y,request.graspVector[0].orientation.z,request.graspVector[0].orientation.w)
+    # print("Action and object name",request.manipulationAction,request.objectClass)
 
     predictionModals = {
         'Quaternion.w': [request.graspVector[0].orientation.w],
@@ -33,83 +33,120 @@ def grasp_feasibility_evaluator(request):
         'object_name': [request.objectClass],
         'actions': [request.manipulationAction]
     }
-    data = pd.DataFrame(predictionModals, columns=['Quaternion.w','Quaternion.x','Quaternion.y','Quaternion.z','Translation.x','Translation.y','Translation.z','object_name','actions'])
-    print("Labling ",data)
+    data = pd.DataFrame(predictionModals,
+                        columns=['Quaternion.w', 'Quaternion.x', 'Quaternion.y', 'Quaternion.z', 'Translation.x',
+                                 'Translation.y', 'Translation.z', 'object_name', 'actions'])
+    print("Labling ", data)
     print(Votingoutput(data))
-    #this function will call the learning algos then it will apply the voting scheme and finally it will return the best grasp as response.
+    # this function will call the learning algos then it will apply the voting scheme and finally it will return the best grasp as response.
     return grasp_feasibility_evaluationResponse(request.graspVector)
 
 
+# this function must received dataframe to predict the labels
 def decision_trees(req):
-    print("not implemented yet")
-    return null #should return the index of the best grasp
+    # load model and label encoders from models folder to perform prediction
+    model = pickle.load(open('Models/DecisionTreeClassifier', 'rb'))
+    object_encoder = pickle.load(open('Models/objectEncoder', 'rb'))
+    actions_encoder = pickle.load(open('Models/actionEncoder', 'rb'))
+    label_encoder = pickle.load(open('Models/labelEncoder', 'rb'))
+    # perform label encoding for  object name and actions
+    req['object_name'] = object_encoder.fit_transform(req['object_name'])
+    req['actions'] = actions_encoder.fit_transform(req['actions'])
+    x = req.values
+    y = model.predict(x)  # this line predict the output
+    return label_encoder.inverse_transform(y)  # convert into valid/invalid from 0/1
 
-def LinearSVC(req):
-    print("not implemented yet")
-    return null #should return the index of the best grasp
+
+def GradientBoostingClassifier(req):
+    # load model and label encoders from models folder to perform prediction
+    model = pickle.load(open('Models/GradientBoostingClassifier', 'rb'))
+    object_encoder = pickle.load(open('Models/objectEncoder', 'rb'))
+    actions_encoder = pickle.load(open('Models/actionEncoder', 'rb'))
+    label_encoder = pickle.load(open('Models/labelEncoder', 'rb'))
+    # perform label encoding for  object name and actions
+    req['object_name'] = object_encoder.fit_transform(req['object_name'])
+    req['actions'] = actions_encoder.fit_transform(req['actions'])
+    x = req.values
+    y = model.predict(x)  # this line predict the output
+    return label_encoder.inverse_transform(y)  # convert into valid/invalid from 0/1
+
 
 def RandomForestClassifier(req):
-    print("not implemented yet")
-    return null #should return the index of the best grasp
+    # load model and label encoders from models folder to perform prediction
+    model = pickle.load(open('Models/RandomForestClassifier', 'rb'))
+    object_encoder = pickle.load(open('Models/objectEncoder', 'rb'))
+    actions_encoder = pickle.load(open('Models/actionEncoder', 'rb'))
+    label_encoder = pickle.load(open('Models/labelEncoder', 'rb'))
+    # perform label encoding for  object name and actions
+    req['object_name'] = object_encoder.fit_transform(req['object_name'])
+    req['actions'] = actions_encoder.fit_transform(req['actions'])
+    x = req.values
+    y = model.predict(x)  # this line predict the output
+    return label_encoder.inverse_transform(y)  # convert into valid/invalid from 0/1
 
-def VotingScheme(req):#output of the above functions will be input to this function
+
+def VotingScheme(req):  # output of the above functions will be input to this function
     print("not implemented yet")
-    return null 
-    
+    return null
+
+
 def Votingoutput(data):
     valid = 0
     invalid = 0
-    
+
     objectEncoder = LabelEncoder()
-    
-    data.insert(9,"encoded",objectEncoder.fit_transform(data['object_name']))
+
+    data.insert(9, "encoded", objectEncoder.fit_transform(data['object_name']))
 
     data['object_name'] = data['encoded']
 
-    del(data['encoded'])
+    del (data['encoded'])
 
     actionEncoder = LabelEncoder();
-    data.insert(9,"encoded",actionEncoder.fit_transform(data['actions']))
+    data.insert(9, "encoded", actionEncoder.fit_transform(data['actions']))
 
     data['actions'] = data['encoded']
 
-    del(data['encoded'])
-    RandomForestClassifier = pickle.load(open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/RandomForestClassifier2','rb'))
+    del (data['encoded'])
+    RandomForestClassifier = pickle.load(
+        open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/RandomForestClassifier2', 'rb'))
     result = RandomForestClassifier.predict(data.values)
-    if(result[0] =='valid' ):
-        valid = valid+1;
+    if (result[0] == 'valid'):
+        valid = valid + 1;
     else:
         invalid = invalid + 1
 
-
-    DecisionTreeClassifier = pickle.load(open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/DecisionTreeClassifier2','rb'))
+    DecisionTreeClassifier = pickle.load(
+        open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/DecisionTreeClassifier2', 'rb'))
     result1 = DecisionTreeClassifier.predict(data.values)
-    if(result1[0] =='valid' ):
-        valid = valid+1;
+    if (result1[0] == 'valid'):
+        valid = valid + 1;
     else:
         invalid = invalid + 1
 
-
-    GradientBoostingClassifier = pickle.load(open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/GradientBoostingClassifier2','rb'))
+    GradientBoostingClassifier = pickle.load(
+        open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/GradientBoostingClassifier2', 'rb'))
     result2 = GradientBoostingClassifier.predict(data.values)
-    if(result2[0] =='valid' ):
-        valid = valid+1;
+    if (result2[0] == 'valid'):
+        valid = valid + 1;
     else:
         invalid = invalid + 1
 
-    if(valid > invalid):
+    if (valid > invalid):
         return valid
     else:
         return invalid
 
-#main function that spawn the services.
+
+# main function that spawn the services.
 def machine_learning_server():
     rospy.init_node(NAME)
-    #print(Votingoutput('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/unseen.csv'))
+    # print(Votingoutput('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/unseen.csv'))
     s1 = rospy.Service('grasp_feasibility_evaluator', grasp_feasibility_evaluation, grasp_feasibility_evaluator)
 
     # spin() keeps Python from exiting until node is shutdown
     rospy.spin()
+
 
 if __name__ == "__main__":
     machine_learning_server()
