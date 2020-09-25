@@ -86,56 +86,22 @@ def RandomForestClassifier(req):
 
 
 def VotingScheme(req):  # output of the above functions will be input to this function
-    print("not implemented yet")
-    return null
+    valid = 0
+    if decision_trees(req) == 'valid':
+        valid += 1
+    if GradientBoostingClassifier(req):
+        valid += 1
+    if RandomForestClassifier(req):
+        valid += 1
+    if valid > 1:
+        return 'valid'
+    else:
+        return 'invalid'
 
 
 def Votingoutput(data):
-    valid = 0
-    invalid = 0
-
-    objectEncoder = LabelEncoder()
-
-    data.insert(9, "encoded", objectEncoder.fit_transform(data['object_name']))
-
-    data['object_name'] = data['encoded']
-
-    del (data['encoded'])
-
-    actionEncoder = LabelEncoder();
-    data.insert(9, "encoded", actionEncoder.fit_transform(data['actions']))
-
-    data['actions'] = data['encoded']
-
-    del (data['encoded'])
-    RandomForestClassifier = pickle.load(
-        open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/RandomForestClassifier2', 'rb'))
-    result = RandomForestClassifier.predict(data.values)
-    if (result[0] == 'valid'):
-        valid = valid + 1;
-    else:
-        invalid = invalid + 1
-
-    DecisionTreeClassifier = pickle.load(
-        open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/DecisionTreeClassifier2', 'rb'))
-    result1 = DecisionTreeClassifier.predict(data.values)
-    if (result1[0] == 'valid'):
-        valid = valid + 1;
-    else:
-        invalid = invalid + 1
-
-    GradientBoostingClassifier = pickle.load(
-        open('/home/muhayyuddin/graspit_ws/src/machine_learning/scripts/GradientBoostingClassifier2', 'rb'))
-    result2 = GradientBoostingClassifier.predict(data.values)
-    if (result2[0] == 'valid'):
-        valid = valid + 1;
-    else:
-        invalid = invalid + 1
-
-    if (valid > invalid):
-        return valid
-    else:
-        return invalid
+    return
+    #  no need to implement this function anymore
 
 
 # main function that spawn the services.
